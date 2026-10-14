@@ -178,16 +178,18 @@ def send_mail(subject, html_body, text_body):
     password = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "")
     recipients = [a.strip() for a in os.environ["MAIL_TO"].split(",") if a.strip()]
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = formataddr(("오늘의 사자성어", user))
-    msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(text_body, "plain", "utf-8"))
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
+    # 받는 사람끼리 서로의 주소가 보이지 않도록 한 사람씩 따로 보낸다.
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
         smtp.login(user, password)
-        smtp.sendmail(user, recipients, msg.as_string())
+        for to in recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = formataddr(("오늘의 사자성어", user))
+            msg["To"] = to
+            msg.attach(MIMEText(text_body, "plain", "utf-8"))
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+            smtp.sendmail(user, [to], msg.as_string())
+    print(f"받는 사람 {len(recipients)}명")
 
 
 def main():
